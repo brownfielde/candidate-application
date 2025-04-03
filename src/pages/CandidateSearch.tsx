@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
-import { searchGithub} from '../api/API';
-import Candidates from '../interfaces/Candidate.interface';
+import { searchGithub } from '../api/API'; 
+import Candidates from '../interfaces/Candidate.interface'; 
 
 const CandidateSearch = () => {
   const [candidates, setCandidates] = useState<Candidates[]>([]);
   const [currentCandidateIndex, setCurrentCandidateIndex] = useState(0);
+  const [savedCandidates, setSavedCandidates] = useState<Candidates[]>([]);
   const [message, setMessage] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Fetch candidates
   useEffect(() => {
     const fetchCandidates = async () => {
-      setLoading(true); 
+      setLoading(true);
       try {
-        const result = await searchGithub(); 
+        const result = await searchGithub();
         setCandidates(result);
       } catch (error) {
         setMessage('Error fetching candidates. Please try again later.');
@@ -22,21 +24,34 @@ const CandidateSearch = () => {
     };
 
     fetchCandidates();
-  }, []); 
+  }, []);
 
-  const handleAccept = () => {
-    const acceptedCandidate = candidates[currentCandidateIndex];
-    setMessage(`Candidate ${acceptedCandidate.name} accepted.`);
-    nextCandidate();
+  // Handle saving a candidate
+  const handleSavedCandidates = () => {
+    const newSavedCandidates = [...savedCandidates, candidates[currentCandidateIndex]];
+    setSavedCandidates(newSavedCandidates);
+    localStorage.setItem('savedCandidates', JSON.stringify(newSavedCandidates));
+    setMessage(`Candidate ${candidates[currentCandidateIndex].name} saved.`);
+    nextCandidate(); 
   };
 
+  
   const nextCandidate = () => {
     if (currentCandidateIndex < candidates.length - 1) {
       setCurrentCandidateIndex(currentCandidateIndex + 1);
+      setMessage('');
     } else {
       setMessage('No more candidates.');
     }
   };
+
+ 
+  const handleSkip = () => {
+    nextCandidate();
+  };
+
+  
+  const currentCandidate = candidates[currentCandidateIndex];
 
   // If no candidates are available, render a message
   if (candidates.length === 0) {
@@ -45,26 +60,33 @@ const CandidateSearch = () => {
 
   return (
     <div>
-      <h1>Candidate Search</h1>
       {loading ? (
         <p>Loading...</p>
-      ) : message ? (
-        <p>{message}</p>
       ) : (
         <div>
-          <div>
-            <img 
-              src={candidates[currentCandidateIndex].avatar} 
-              alt={candidates[currentCandidateIndex].name} 
-            />
-            <h2>{candidates[currentCandidateIndex].name}</h2>
-            <p>Username: {candidates[currentCandidateIndex].userName}</p>
-            <p>Location: {candidates[currentCandidateIndex].location}</p>
-            <p>Company: {candidates[currentCandidateIndex].company}</p>
-            <p>Bio: {candidates[currentCandidateIndex].bio}</p>
-          </div>
-          <button onClick={handleAccept}>Save +</button>
-          <button onClick={nextCandidate}>Skip -</button>
+          {message && <p>{message}</p>} {/* Show message if any */}
+          
+          {currentCandidate ? (
+            <div>
+              <div>
+                <img
+                  src={currentCandidate.avatar}
+                  alt={currentCandidate.name}
+                  style={{ width: '100px', height: '100px', borderRadius: '50%' }}
+                />
+                <h2>{currentCandidate.name}</h2>
+                <p>Username: {currentCandidate.userName}</p>
+                <p>Location: {currentCandidate.location}</p>
+                <p>Company: {currentCandidate.company}</p>
+                <p>Bio: {currentCandidate.bio}</p>
+                <p>Email: {currentCandidate.email}</p>
+              </div>
+              <button onClick={handleSavedCandidates}>Save +</button>
+              <button onClick={handleSkip}>Skip -</button>
+            </div>
+          ) : (
+            <p>No more candidates to show.</p>
+          )}
         </div>
       )}
     </div>
@@ -72,3 +94,4 @@ const CandidateSearch = () => {
 };
 
 export default CandidateSearch;
+
